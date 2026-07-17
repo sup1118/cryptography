@@ -6,7 +6,7 @@
 
 const END_DELIMITER = '##END##';
 
-/* ---------- Binary <-> text helpers ---------- */
+/* ---------- Binary <-> text helpers ----...------ */
 
 function textToBinary(text) {
   let binary = '';
