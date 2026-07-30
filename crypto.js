@@ -1,12 +1,8 @@
-/* =========================================================
-   Cryptography & Data Hide Sandbox — LSB Steganography Core
-   Pure, UI-agnostic functions. No DOM lookups beyond the
-   canvas element passed in as an argument.
-   ========================================================= */
+
 
 const END_DELIMITER = '##END##';
 
-/* ---------- Binary <-> text helpers ---------- */
+//binary to text vice versa
 
 function textToBinary(text) {
   let binary = '';
@@ -27,10 +23,7 @@ function binaryToText(binary) {
 
 /* ---------- Encode ---------- */
 
-/**
- * Hides `secretText` inside the pixel data of `canvas` using LSB
- * substitution on the R, G, and B channels (alpha is left untouched
- * so transparency is never altered).
+
  *
  * @param {HTMLCanvasElement} canvas - canvas already holding the source image
  * @param {string} secretText - message to hide
@@ -103,14 +96,7 @@ function decodeMessage(canvas) {
 /* ---------- Difference map ---------- */
 
 /**
- * Visualizes exactly which pixel channels differ between the original
- * and encoded canvases — pure black where a channel is unchanged, bright
- * neon green where LSB encoding altered a channel. Painted onto
- * `targetCanvas`, which is resized to match the source dimensions.
- *
- * Pure with respect to its inputs: reads pixel data from the two source
- * canvases and only ever writes to targetCanvas, never mutating the
- * original or encoded canvases.
+ 
  *
  * @param {HTMLCanvasElement} originalCanvas - canvas holding the pre-encode image
  * @param {HTMLCanvasElement} encodedCanvas - canvas holding the post-encode image
@@ -203,117 +189,4 @@ async function deriveAudioKey(password, salt, iterations) {
     false,
     ['encrypt', 'decrypt']
   );
-}
-
-/**
- * Binary container layout:
- *   [ MAGIC 4B ] [ VERSION 1B ] [ ITERATIONS 4B ] [ SALT_LEN 1B ] [ IV_LEN 1B ]
- *   [ SALT ] [ IV ] [ TAG 16B ] [ CIPHERTEXT ...]
- * Storing iteration count / lengths inline keeps old files decryptable
- * even if these constants change in a future version.
- */
-function packAudioContainer({ salt, iv, iterations, tag, ciphertext }) {
-  const headerLength = AUDIO_MAGIC.length + 1 + 4 + 1 + 1;
-  const totalLength = headerLength + salt.length + iv.length + tag.length + ciphertext.length;
-
-  const out = new Uint8Array(totalLength);
-  const view = new DataView(out.buffer);
-  let offset = 0;
-
-  out.set(AUDIO_MAGIC, offset); offset += AUDIO_MAGIC.length;
-  view.setUint8(offset, AUDIO_FORMAT_VERSION); offset += 1;
-  view.setUint32(offset, iterations, false); offset += 4;
-  view.setUint8(offset, salt.length); offset += 1;
-  view.setUint8(offset, iv.length); offset += 1;
-  out.set(salt, offset); offset += salt.length;
-  out.set(iv, offset); offset += iv.length;
-  out.set(tag, offset); offset += tag.length;
-  out.set(ciphertext, offset);
-
-  return out;
-}
-
-function unpackAudioContainer(containerBuffer) {
-  const bytes = new Uint8Array(containerBuffer);
-  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  let offset = 0;
-
-  const magic = bytes.slice(offset, offset + AUDIO_MAGIC.length);
-  offset += AUDIO_MAGIC.length;
-  if (!magic.every((b, i) => b === AUDIO_MAGIC[i])) {
-    throw new Error('Not a recognized .agcm file (bad header) — wrong file, or file is corrupted.');
-  }
-
-  const version = view.getUint8(offset); offset += 1;
-  if (version !== AUDIO_FORMAT_VERSION) {
-    throw new Error(`Unsupported .agcm version: ${version}`);
-  }
-
-  const iterations = view.getUint32(offset, false); offset += 4;
-  const saltLength = view.getUint8(offset); offset += 1;
-  const ivLength = view.getUint8(offset); offset += 1;
-
-  const salt = bytes.slice(offset, offset + saltLength); offset += saltLength;
-  const iv = bytes.slice(offset, offset + ivLength); offset += ivLength;
-  const tag = bytes.slice(offset, offset + AUDIO_TAG_LENGTH_BYTES); offset += AUDIO_TAG_LENGTH_BYTES;
-  const ciphertext = bytes.slice(offset);
-
-  return { iterations, salt, iv, tag, ciphertext };
-}
-
-/**
- * Encrypts a raw audio ArrayBuffer under a password. Returns a Uint8Array
- * container ready to save/download.
- */
-async function encryptAudioFile(password, audioArrayBuffer, iterations = AUDIO_PBKDF2_ITERATIONS) {
-  if (!password) throw new Error('A password is required to encrypt.');
-
-  // Fresh random salt + IV every single time — never reused across files,
-  // even for the same password. This is what makes identical passwords
-  // still produce unrelated keys, and keeps GCM's security guarantees intact.
-  const salt = window.crypto.getRandomValues(new Uint8Array(AUDIO_SALT_LENGTH_BYTES));
-  const iv = window.crypto.getRandomValues(new Uint8Array(AUDIO_IV_LENGTH_BYTES));
-
-  const key = await deriveAudioKey(password, salt, iterations);
-  const plaintext = new Uint8Array(audioArrayBuffer);
-
-  // AES-GCM returns ciphertext with the 16-byte auth tag appended; we slice
-  // it back off so the container stores it as an explicit, labeled field.
-  const encryptedBuffer = await AUDIO_SUBTLE.encrypt(
-    { name: 'AES-GCM', iv, tagLength: AUDIO_TAG_LENGTH_BITS },
-    key,
-    plaintext
-  );
-  const encryptedBytes = new Uint8Array(encryptedBuffer);
-  const tag = encryptedBytes.slice(encryptedBytes.length - AUDIO_TAG_LENGTH_BYTES);
-  const ciphertext = encryptedBytes.slice(0, encryptedBytes.length - AUDIO_TAG_LENGTH_BYTES);
-
-  return packAudioContainer({ salt, iv, iterations, tag, ciphertext });
-}
-
-/**
- * Decrypts a container produced by encryptAudioFile(). Throws (with a
- * deliberately generic message) if the password is wrong OR the file has
- * been tampered with — GCM's tag check makes those two cases indistinguishable
- * by design, which is the correct, safe behavior.
- */
-async function decryptAudioFile(password, containerArrayBuffer) {
-  if (!password) throw new Error('A password is required to decrypt.');
-
-  const { iterations, salt, iv, tag, ciphertext } = unpackAudioContainer(containerArrayBuffer);
-  const key = await deriveAudioKey(password, salt, iterations);
-
-  const combined = new Uint8Array(ciphertext.length + tag.length);
-  combined.set(ciphertext, 0);
-  combined.set(tag, ciphertext.length);
-
-  try {
-    return await AUDIO_SUBTLE.decrypt(
-      { name: 'AES-GCM', iv, tagLength: AUDIO_TAG_LENGTH_BITS },
-      key,
-      combined
-    );
-  } catch (err) {
-    throw new Error('Decryption failed: incorrect password, or the file is corrupted/tampered with.');
-  }
 }
