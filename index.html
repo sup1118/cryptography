@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cryptography &amp; Data Hide Sandbox</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&family=Architects+Daughter&family=Special+Elite&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="spectro-stego.css">
+</head>
+<body>
+
+  <!-- MASTHEAD -->
+  <header class="masthead">
+    <div class="masthead__eyebrow">No. 01 &mdash; Est. This Exhibition</div>
+    <h1 class="masthead__title">The Cryptography &amp;<br>Data&#8209;Hide Sandbox</h1>
+    <p class="masthead__deck">Two modules, one field guide &mdash; fold text into pixels, or hide it in a spectrogram.</p>
+    <div class="masthead__rule"></div>
+    <div class="masthead__status" id="status-indicator">
+      <span class="status-dot" id="status-dot"></span>
+      <span id="status-text">No image loaded</span>
+    </div>
+
+    <nav class="tab-nav" role="tablist" aria-label="Sandbox modules">
+      <button class="tab-nav__btn is-active" role="tab" aria-selected="true" aria-controls="panel-lsb-stego" data-tab="lsb-stego">
+        <span class="tab-nav__index">01</span> LSB Steganography
+      </button>
+      <button class="tab-nav__btn" role="tab" aria-selected="false" aria-controls="panel-spectro-audio" data-tab="spectro-audio">
+        <span class="tab-nav__index">02</span> Spectrogram Audio
+      </button>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ================= TAB 1 — LSB IMAGE STEGANOGRAPHY ================= -->
+    <section class="tab-panel is-active" id="panel-lsb-stego" role="tabpanel">
+      <div class="layout">
+
+        <!-- LEFT COLUMN: CONTROLS -->
+        <section class="column column--controls" aria-label="Controls">
+
+          <article class="step">
+            <div class="step__number">01</div>
+            <div class="step__body">
+              <h2 class="step__title">Choose a photograph</h2>
+              <p class="step__caption">JPG, PNG, or WebP &mdash; any format works as the source.</p>
+
+              <label class="uploader" id="file-drop">
+                <input type="file" id="imageLoader" accept="image/*" hidden>
+                <span class="uploader__text" id="file-drop-text">Select an image&hellip;</span>
+              </label>
+              <span class="hand-note hand-note--upload">&#8594; start here</span>
+            </div>
+          </article>
+
+          <article class="step">
+            <div class="step__number">02</div>
+            <div class="step__body">
+              <h2 class="step__title">Write your secret</h2>
+              <p class="step__caption">This text gets folded into the image's pixels, bit by bit.</p>
+
+              <textarea
+                id="secretText"
+                class="manuscript-input"
+                rows="6"
+                placeholder="Type the message you want to hide..."
+              ></textarea>
+              <div class="char-counter" id="char-counter">0 characters</div>
+            </div>
+          </article>
+
+          <article class="step step--actions">
+            <div class="step__number">03</div>
+            <div class="step__body">
+              <h2 class="step__title">Run the operation</h2>
+              <div class="action-row">
+                <button id="encodeBtn" class="btn btn--solid" disabled>Encode</button>
+                <button id="decodeBtn" class="btn btn--hollow" disabled>Decode</button>
+              </div>
+              <button id="download-btn" class="btn btn--link" disabled>&#8595; Download encoded PNG</button>
+              <span class="hand-note hand-note--actions">&#8594; results appear on the right</span>
+            </div>
+          </article>
+
+          <!-- DESIGNER'S NOTEBOOK -->
+          <article class="notebook">
+            <div class="notebook__tab">Designer's Notebook</div>
+            <ul class="notebook__list" id="log-list">
+              <li class="notebook__entry notebook__entry--muted">Waiting for image&hellip;</li>
+            </ul>
+          </article>
+
+        </section>
+
+        <!-- RIGHT COLUMN: CANVAS / FILM FRAME -->
+        <section class="column column--stage" aria-label="Image canvas">
+
+          <div class="plate">
+            <div class="plate__caption">
+              <span class="plate__fig">FIG. 01</span>
+              <span class="plate__label">Working canvas</span>
+              <span class="plate__dims" id="dims-label">&mdash;</span>
+            </div>
+
+            <div class="filmstrip">
+              <div class="filmstrip__perforations filmstrip__perforations--top" aria-hidden="true"></div>
+
+              <div class="canvas-frame" id="canvas-frame">
+                <canvas id="imageCanvas"></canvas>
+                <div class="canvas-frame__empty" id="canvas-empty">
+                  <span>Your photograph will appear here</span>
+                </div>
+              </div>
+
+              <div class="filmstrip__perforations filmstrip__perforations--bottom" aria-hidden="true"></div>
+            </div>
+          </div>
+
+          <div class="plate plate--output hidden" id="output-section">
+            <div class="plate__caption">
+              <span class="plate__fig">FIG. 02</span>
+              <span class="plate__label">Decoded message</span>
+            </div>
+            <pre class="decoded-text" id="decoded-output"></pre>
+          </div>
+
+          <div class="plate plate--output hidden" id="diff-section">
+            <div class="plate__caption">
+              <span class="plate__fig">FIG. 03</span>
+              <span class="plate__label">Difference map</span>
+            </div>
+            <canvas id="diffCanvas" class="diff-canvas"></canvas>
+          </div>
+
+        </section>
+
+      </div>
+    </section>
+
+    <!-- ================= TAB 2 — SPECTROGRAM AUDIO HIDING ================= -->
+    <section class="tab-panel" id="panel-spectro-audio" role="tabpanel" hidden>
+      <section class="spectro-card" id="spectro-card" aria-label="Text-to-Spectrogram Audio Steganography">
+
+        <div class="spectro-grid">
+
+          <div class="spectro-controls">
+
+            <div class="spectro-field">
+              <label class="spectro-label" for="spectroSecretText">Secret text</label>
+              <input type="text" id="spectroSecretText" class="spectro-text-input" value="SECRET" maxlength="40" placeholder="SECRET">
+            </div>
+
+            <div class="spectro-field">
+              <label class="spectro-label" for="spectroDurationSlider">
+                Duration <span class="spectro-value" id="spectroDurationValue">3.0s</span>
+              </label>
+              <input type="range" id="spectroDurationSlider" min="1" max="6" step="0.5" value="3" class="spectro-slider">
+            </div>
+
+            <div class="spectro-field spectro-field--pair">
+              <div>
+                <label class="spectro-label" for="spectroMinFreqSlider">
+                  Min freq <span class="spectro-value" id="spectroMinFreqValue">500 Hz</span>
+                </label>
+                <input type="range" id="spectroMinFreqSlider" min="100" max="4000" step="50" value="500" class="spectro-slider">
+              </div>
+              <div>
+                <label class="spectro-label" for="spectroMaxFreqSlider">
+                  Max freq <span class="spectro-value" id="spectroMaxFreqValue">8000 Hz</span>
+                </label>
+                <input type="range" id="spectroMaxFreqSlider" min="2000" max="16000" step="50" value="8000" class="spectro-slider">
+              </div>
+            </div>
+
+            <div class="spectro-actions">
+              <button id="spectroSynthesizeBtn" class="spectro-btn spectro-btn--solid">Synthesize &amp; Play</button>
+              <button id="spectroStopBtn" class="spectro-btn spectro-btn--hollow" disabled>Pause / Stop</button>
+            </div>
+            <button id="spectroExportBtn" class="spectro-btn spectro-btn--link" disabled>&#8595; Export .WAV file</button>
+
+            <div class="spectro-field">
+              <label class="spectro-label" for="spectroDecodeInput">Decode a .wav file</label>
+              <label class="uploader" id="spectro-decode-drop">
+                <input type="file" id="spectroDecodeInput" accept=".wav,audio/wav" hidden>
+                <span class="uploader__text" id="spectroDecodeFileName">Select a .wav file&hellip;</span>
+              </label>
+              <button id="spectroDecodeBtn" class="spectro-btn spectro-btn--hollow" disabled>Decode &amp; Reveal</button>
+            </div>
+
+            <ul class="spectro-log" id="spectroLog">
+              <li class="spectro-log__entry spectro-log__entry--muted">Ready. Enter text and synthesize.</li>
+            </ul>
+          </div>
+
+          <div class="spectro-visualizers">
+
+            <div class="spectro-plate">
+              <div class="spectro-plate__caption">
+                <span class="spectro-plate__fig">FIG. A</span>
+                <span class="spectro-plate__label">Source bitmap matrix</span>
+                <span class="spectro-plate__hint">Y = pitch &middot; X = time</span>
+              </div>
+              <canvas id="spectroBitmapCanvas" class="spectro-canvas" width="400" height="160"></canvas>
+            </div>
+
+            <div class="spectro-plate">
+              <div class="spectro-plate__caption">
+                <span class="spectro-plate__fig">FIG. B</span>
+                <span class="spectro-plate__label">Live spectrogram analyzer</span>
+                <span class="spectro-plate__hint" id="spectroPlaybackHint">idle</span>
+              </div>
+              <canvas id="spectroAnalyzerCanvas" class="spectro-canvas" width="400" height="160"></canvas>
+            </div>
+
+            <div class="spectro-plate">
+              <div class="spectro-plate__caption">
+                <span class="spectro-plate__fig">FIG. C</span>
+                <span class="spectro-plate__label">Reconstructed bitmap</span>
+                <span class="spectro-plate__hint">read the letters visually</span>
+              </div>
+              <canvas id="spectroDecodedCanvas" class="spectro-canvas" width="400" height="160"></canvas>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+    </section>
+
+  </main>
+
+  <script src="crypto.js"></script>
+  <script src="ui.js"></script>
+  <script src="spectro-stego.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
