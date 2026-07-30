@@ -35,7 +35,11 @@
 
   <main>
 
-    <!-- TAB 1 LSB IMAGE STEGANOGRAPHY -->
+    <div class="reset-row">
+      <button id="reset-btn" class="btn btn--link">&#8635; Reset / start over</button>
+    </div>
+
+    <!-- ================= TAB 1 — LSB IMAGE STEGANOGRAPHY ================= -->
     <section class="tab-panel is-active" id="panel-lsb-stego" role="tabpanel">
       <div class="layout">
 
@@ -81,7 +85,6 @@
                 <button id="decodeBtn" class="btn btn--hollow" disabled>Decode</button>
               </div>
               <button id="download-btn" class="btn btn--link" disabled>&#8595; Download encoded PNG</button>
-             
               <span class="hand-note hand-note--actions">&#8594; results appear on the right</span>
             </div>
           </article>
@@ -141,7 +144,7 @@
       </div>
     </section>
 
-    <!--  TAB 2  SPECTROGRAM AUDIO HIDING  -->
+    <!-- ================= TAB 2 — SPECTROGRAM AUDIO HIDING ================= -->
     <section class="tab-panel" id="panel-spectro-audio" role="tabpanel" hidden>
       <section class="spectro-card" id="spectro-card" aria-label="Text-to-Spectrogram Audio Steganography">
 
@@ -228,8 +231,7 @@
           </div>
 
         </div>
-      
-    </section>
+      </section>
     </section>
 
   </main>
