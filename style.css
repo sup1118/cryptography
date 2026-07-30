@@ -381,8 +381,8 @@ body {
    "the next thing to click". */
 #reset-btn {
   display: inline-block;
+  flex: 0 0 auto;
   width: auto;
-  flex-shrink: 0;
   color: var(--ink-faint);
 }
 
