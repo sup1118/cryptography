@@ -363,6 +363,33 @@ body {
   color: var(--green);
 }
 
+/* Reset row — sits above both tab panels, right-aligned in the top-right
+   corner. max-width + padding mirror .layout so the button's right edge
+   lines up with the rest of the page's content, not the raw viewport edge. */
+.reset-row {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 4px 32px 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Reset/start-over button — same family as .btn--link, but it's a
+   destructive action (clears everything), so it's pulled visually apart:
+   auto width instead of the block/100% default, muted color at rest, and
+   hover goes toward warm gold instead of green so it doesn't read as
+   "the next thing to click". */
+#reset-btn {
+  display: inline-block;
+  width: auto;
+  flex-shrink: 0;
+  color: var(--ink-faint);
+}
+
+#reset-btn:hover:not(:disabled) {
+  color: var(--gold-deep);
+}
+
 /* =========================================================
    Designer's Notebook
    ========================================================= */
